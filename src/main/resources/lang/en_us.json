@@ -1,0 +1,20 @@
+{
+  "item.orbital_railgun.orbital_railgun": "Orbital Railgun",
+  "death.attack.strike": "%1$s was obliterated by an Orbital Strike",
+  "subtitle.orbital_railgun.railgun_shoot": "Orbital railgun fires",
+  "subtitle.orbital_railgun.scope_on": "Scope online",
+  "subtitle.orbital_railgun.equip": "Orbital railgun equipped",
+  "item.orbital_railgun.orbital_railgun.lore.aim": "Hold right-click to aim",
+  "item.orbital_railgun.orbital_railgun.lore.fire": "Left-click while aiming to fire",
+  "death.attack.strike.player": "%1$s was obliterated by an Orbital Strike called in by %2$s",
+  "orbital_railgun.aim.target": "Target: %s, %s, %s · %s m",
+  "orbital_railgun.aim.no_target": "No target in range",
+  "orbital_railgun.cooldown": "Recharging: %s s",
+  "orbital_railgun.no_permission": "You are not allowed to use the Orbital Railgun.",
+  "orbital_railgun.world_disabled": "The Orbital Railgun is disabled in this world.",
+  "orbital_railgun.strike_blocked": "The orbital strike was blocked.",
+  "orbital_railgun.command.given": "Gave an Orbital Railgun to %s player(s).",
+  "orbital_railgun.command.reloaded": "Orbital Railgun configuration reloaded.",
+  "orbital_railgun.command.strike": "Orbital strike called in at %s, %s, %s.",
+  "orbital_railgun.command.stopped": "Stopped %s active orbital strike(s)."
+}
