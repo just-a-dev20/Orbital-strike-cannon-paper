@@ -1,0 +1,22 @@
+name: OrbitalRailgun
+version: '${version}'
+main: io.github.justadev20.orbitalrailgun.OrbitalRailgunPlugin
+bootstrapper: io.github.justadev20.orbitalrailgun.OrbitalRailgunBootstrap
+api-version: '${minecraftVersion}'
+description: Server-side Paper port of the Orbital Railgun mod by Mishkis. No client mods required.
+authors: [just-a-dev20]
+contributors: [Mishkis]
+website: https://github.com/just-a-dev20/orbital-strike-cannon
+
+permissions:
+  orbitalrailgun.use:
+    description: Aim and fire the Orbital Railgun.
+    default: true
+  orbitalrailgun.give:
+    description: Use /railgun give.
+    default: op
+  orbitalrailgun.admin:
+    description: Use /railgun reload, /railgun strike and /railgun stop.
+    default: op
+    children:
+      orbitalrailgun.give: true
