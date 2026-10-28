@@ -26,7 +26,8 @@ S_LOGIN = {"hello": 0, "login_acknowledged": 3}
 C_CONFIG = {"select_known_packs": 15, "finish_configuration": 3, "keep_alive": 4, "ping": 5, "disconnect": 2}
 S_CONFIG = {"select_known_packs": 7, "finish_configuration": 3, "keep_alive": 4, "pong": 5}
 C_PLAY = {"keep_alive": 45, "ping": 62, "player_position": 73, "disconnect": 32, "system_chat": 124,
-          "cooldown": 22, "set_action_bar_text": 89, "chunk_batch_finished": 11}
+          "cooldown": 22, "set_action_bar_text": 89, "chunk_batch_finished": 11,
+          "resource_pack_push": 82}
 S_PLAY = {"keep_alive": 28, "pong": 45, "accept_teleportation": 0, "move_player_rot": 32, "use_item": 67,
           "punch": 46, "player_loaded": 44, "chunk_batch_received": 11, "client_command": 12,
           "player_action": 41}
@@ -161,6 +162,8 @@ class Bot:
             self.log("ACTIONBAR", printable(data))
         elif packet_id == C_PLAY["system_chat"]:
             self.log("CHAT", printable(data))
+        elif packet_id == C_PLAY["resource_pack_push"]:
+            self.log("RESOURCE_PACK", printable(data))
         elif packet_id == C_PLAY["cooldown"]:
             self.log("COOLDOWN", printable(data))
         elif packet_id == C_PLAY["disconnect"]:

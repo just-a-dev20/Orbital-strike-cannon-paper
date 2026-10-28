@@ -60,6 +60,9 @@ public final class OrbitalRailgunPlugin extends JavaPlugin {
         if (strikes != null) {
             strikes.stopAll();
         }
+        if (pack != null) {
+            pack.close();
+        }
         RailgunRecipe.unregister();
     }
 

@@ -15,6 +15,7 @@ repositories {
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:${providers.gradleProperty("paperApiVersion").get()}")
+    compileOnly("io.netty:netty-transport:${providers.gradleProperty("nettyVersion").get()}")
 }
 
 java {

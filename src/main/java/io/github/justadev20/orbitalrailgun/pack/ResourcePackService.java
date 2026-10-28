@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.InetSocketAddress;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -37,7 +38,8 @@ import org.jspecify.annotations.Nullable;
 
 /**
  * Builds the optional server resource pack (model, texture, translations, aim overlay) from the plugin jar plus
- * anything in {@code pack-overrides/}, and offers it to joining players. Hosting the zip is left to the admin.
+ * anything in {@code pack-overrides/}, and offers it to joining players. Without a configured URL the plugin serves
+ * the zip itself on the game port (see {@link GamePortHost}).
  */
 public final class ResourcePackService implements Listener {
     private static final UUID PACK_ID = UUID.nameUUIDFromBytes("orbital_railgun:pack".getBytes(StandardCharsets.UTF_8));
@@ -48,6 +50,7 @@ public final class ResourcePackService implements Listener {
     private final Logger logger;
     private final Supplier<RailgunConfig> config;
     private final Set<UUID> loaded = ConcurrentHashMap.newKeySet();
+    private final GamePortHost host;
     private @Nullable String hash;
 
     public ResourcePackService(File pluginJar, Path dataFolder, Logger logger, Supplier<RailgunConfig> config) {
@@ -55,6 +58,7 @@ public final class ResourcePackService implements Listener {
         this.dataFolder = dataFolder;
         this.logger = logger;
         this.config = config;
+        this.host = new GamePortHost(logger);
     }
 
     /** Rebuilds the zip and, if the content changed, offers it again to everybody online. */
@@ -62,26 +66,39 @@ public final class ResourcePackService implements Listener {
         RailgunConfig.ResourcePack settings = config.get().resourcePack();
         if (!settings.enabled()) {
             hash = null;
+            host.stop();
             return;
         }
         String previous = hash;
+        byte[] bytes;
         try {
+            bytes = build();
             Path zip = dataFolder.resolve("OrbitalRailgun-pack.zip");
-            byte[] bytes = build();
             Files.write(zip, bytes);
             String built = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-1").digest(bytes));
-            hash = settings.sha1().isEmpty() ? built : settings.sha1().toLowerCase();
+            hash = settings.selfHosted() || settings.sha1().isEmpty() ? built : settings.sha1().toLowerCase();
             logger.info("Resource pack written to " + zip + " (SHA-1 " + built + ").");
         } catch (IOException | NoSuchAlgorithmException e) {
             hash = null;
             logger.severe("Could not build the resource pack: " + e);
             return;
         }
-        if (settings.url().isEmpty()) {
-            logger.warning("resource-pack.enabled is true but resource-pack.url is empty: upload the zip and set the URL.");
-        } else if (previous != null && !previous.equals(hash)) {
+        if (settings.selfHosted()) {
+            if (!host.serve(servedPath(), bytes)) {
+                hash = null;
+                return;
+            }
+            logger.info("Serving the resource pack on the game port at " + servedPath() + ".");
+        } else {
+            host.stop();
+        }
+        if (previous != null && !previous.equals(hash)) {
             Bukkit.getOnlinePlayers().forEach(this::offer);
         }
+    }
+
+    private String servedPath() {
+        return "/orbital_railgun/" + hash + ".zip";
     }
 
     private byte[] build() throws IOException {
@@ -123,15 +140,48 @@ public final class ResourcePackService implements Listener {
 
     private void offer(Player player) {
         RailgunConfig.ResourcePack settings = config.get().resourcePack();
-        if (!settings.enabled() || settings.url().isEmpty() || hash == null) {
+        if (!settings.enabled() || hash == null) {
             return;
         }
-        ResourcePackInfo info = ResourcePackInfo.resourcePackInfo(PACK_ID, URI.create(settings.url()), hash);
+        URI uri = uri(player, settings);
+        if (uri == null) {
+            logger.warning("Cannot tell " + player.getName() + " where to download the resource pack: unknown server address. "
+                    + "Set resource-pack.public-address.");
+            return;
+        }
+        ResourcePackInfo info = ResourcePackInfo.resourcePackInfo(PACK_ID, uri, hash);
         player.sendResourcePacks(ResourcePackRequest.resourcePackRequest()
                 .packs(info)
                 .required(settings.required())
                 .prompt(settings.prompt().isEmpty() ? null : Component.text(settings.prompt()))
                 .replace(false));
+    }
+
+    /** The configured URL, or the game port under the address the player connected with. */
+    private @Nullable URI uri(Player player, RailgunConfig.ResourcePack settings) {
+        try {
+            if (!settings.selfHosted()) {
+                return URI.create(settings.url());
+            }
+            String address = settings.publicAddress();
+            if (address.isEmpty()) {
+                InetSocketAddress virtualHost = player.getVirtualHost();
+                if (virtualHost == null) {
+                    return null;
+                }
+                String hostName = virtualHost.getHostString().split("\0")[0];
+                address = (hostName.contains(":") ? "[" + hostName + "]" : hostName) + ":" + virtualHost.getPort();
+            } else if (!address.matches(".*:\\d+")) {
+                address += ":" + Bukkit.getPort();
+            }
+            return URI.create("http://" + address + servedPath());
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
+
+    public void close() {
+        host.stop();
     }
 
     public boolean hasPack(Player player) {

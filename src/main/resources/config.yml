@@ -74,11 +74,17 @@ recipe:
   discover-on-join: true
 
 resource-pack:
-  # Das Plugin erzeugt beim Start plugins/OrbitalRailgun/OrbitalRailgun-pack.zip.
-  # Lade die Datei auf einen Webserver hoch und trage die direkte Download-URL hier ein.
+  # Liefert das 3D-Modell, die Übersetzungen und den Visier-Rahmen an die Clients aus.
+  # Das Plugin erzeugt dafür beim Start plugins/OrbitalRailgun/OrbitalRailgun-pack.zip.
   enabled: false
+  # Leer lassen: Das Plugin liefert das Pack selbst über den Minecraft-Port aus
+  # (kein Webserver und kein zusätzlicher Port nötig).
+  # Alternativ die direkte Download-URL eines eigenen Webservers eintragen.
   url: ''
-  # SHA-1 der hochgeladenen Datei. Leer lassen, wenn die erzeugte Datei unverändert hochgeladen wird.
+  # Nur wenn url leer ist: Adresse, unter der Spieler den Server erreichen, z. B. 'mc.example.com'
+  # oder 'mc.example.com:25565'. Leer = die Adresse, mit der sich der jeweilige Spieler verbunden hat.
+  public-address: ''
+  # Nur bei eigener URL: SHA-1 der hochgeladenen Datei. Leer = Hash der erzeugten Datei.
   sha1: ''
   # true = Spieler, die das Pack ablehnen, werden getrennt.
   required: false

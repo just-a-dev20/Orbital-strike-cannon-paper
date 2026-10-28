@@ -48,13 +48,27 @@ Ohne Pack sieht die Railgun aus wie eine Armbrust mit violettem Namen, und die T
 der unter `language` eingestellten Sprache. Mit Pack bekommt sie das originale 3D-Modell, die
 15 Übersetzungen der Mod und einen grünen Visier-Rahmen beim Zielen.
 
-1. In `config.yml` `resource-pack.enabled: true` setzen und den Server neu starten (oder
-   `/railgun reload`). Das Plugin erzeugt `plugins/OrbitalRailgun/OrbitalRailgun-pack.zip` und
-   schreibt den SHA-1-Hash ins Log.
-2. Die Zip-Datei auf einen Webserver hochladen, der sie direkt ausliefert. Das Plugin hostet
-   absichtlich nicht selbst, damit kein zusätzlicher Port nötig ist.
-3. Die URL bei `resource-pack.url` eintragen. Ab jetzt bekommt jeder Spieler das Pack beim Betreten
-   angeboten.
+Einrichten:
+
+1. In `config.yml` `resource-pack.enabled: true` setzen. Optional zusätzlich `required: true`,
+   dann wird getrennt, wer das Pack ablehnt.
+2. Server neu starten oder `/railgun reload` ausführen. Fertig.
+
+Das Plugin baut das Pack beim Start und **liefert es selbst über den Minecraft-Port aus**.
+Weder ein Webserver noch ein zusätzlicher Port ist nötig. Der Client lädt es von
+`http://<Adresse, mit der er verbunden ist>:<Port>/orbital_railgun/<sha1>.zip`. Neue
+Verbindungen, die mit einer HTTP-Anfrage beginnen, beantwortet das Plugin mit der Zip-Datei;
+alle anderen gehen unverändert an Minecraft weiter.
+
+Das funktioniert, wenn der Minecraft-Port per TCP direkt erreichbar ist. Das ist bei den meisten
+Hostern der Fall. Zwei Ausnahmen:
+- **Proxy** (Velocity, BungeeCord) oder ein DDoS-Schutz, der nur Minecraft-Verkehr durchlässt:
+  Dort erreicht die HTTP-Anfrage diesen Server nicht. Dann bei `resource-pack.public-address`
+  eine Adresse samt Port eintragen, unter der dieser Server direkt erreichbar ist, oder die
+  Zip-Datei (`plugins/OrbitalRailgun/OrbitalRailgun-pack.zip`) doch extern hosten und
+  `resource-pack.url` setzen.
+- **Keine Adresse vom Client:** Meldet das Log „unknown server address“, hat der Client keine
+  Serveradresse übermittelt. Auch dann `public-address` setzen.
 
 Eigene Inhalte, zum Beispiel Sounds, lassen sich über `plugins/OrbitalRailgun/pack-overrides/`
 hinzufügen. Alles in diesem Ordner landet mit demselben Pfad im Pack und überschreibt vorhandene
@@ -88,7 +102,11 @@ nie eine fehlende Textur.
 | `aim.release-timeout-ticks` | `8` | so lange ohne Rechtsklick-Paket gilt die Taste als losgelassen |
 | `aim.slowdown` | `0.8` | Verlangsamung beim Zielen; erzeugt auch einen leichten Zoom (FOV) |
 | `recipe.enabled` / `recipe.discover-on-join` | `true` | Rezept registrieren und im Rezeptbuch freischalten |
-| `resource-pack.*` | aus | siehe oben; `required: true` trennt Spieler, die das Pack ablehnen |
+| `resource-pack.enabled` | `false` | Resource-Pack ausliefern (siehe oben) |
+| `resource-pack.url` | leer | leer: Auslieferung über den Minecraft-Port; sonst die URL eines eigenen Webservers |
+| `resource-pack.public-address` | leer | Adresse (optional mit Port) für die Download-URL; leer: die Adresse, mit der sich der Spieler verbunden hat |
+| `resource-pack.sha1` | leer | nur bei eigener URL, falls die hochgeladene Datei von der erzeugten abweicht |
+| `resource-pack.required` | `false` | `true` trennt Spieler, die das Pack ablehnen |
 
 Änderungen übernimmt `/railgun reload`. Strikes, die schon laufen, behalten ihre alten Einstellungen.
 
@@ -201,7 +219,14 @@ lässt sie sich abschalten. Das Abbau-Tempo regeln `destruction.blocks-per-tick`
   Mod. Die Umrechnung entspricht GeckoLibs Renderer: X gespiegelt, Rotationen um X und Y negiert,
   Box-UVs wie in Blockbench.
 - `tools/pack-validator/ValidatePack.java` lädt das erzeugte Pack mit dem echten 26.3-Client-Code,
-  ohne Grafikkarte. Geprüft werden `pack.mcmeta`, Item-Definition, Modell und Schrift.
+  ohne Grafikkarte. Geprüft werden `pack.mcmeta`, Item-Definition, Modell und Schrift. Den
+  Download über den Spielport habe ich mit dem Downloader des Vanilla-Clients (`HttpUtil`)
+  geprüft, einschließlich SHA-1-Kontrolle.
+- **Server-Interna:** Für die Auslieferung über den Spielport gibt es in Paper keine öffentliche
+  API. `pack/GamePortHost` ist deshalb die einzige Stelle, die Paper-Interna nutzt: Per Reflection
+  registriert sie einen `io.papermc.paper.network.ChannelInitializeListener`. Fehlt dieser Hook in
+  einer künftigen Paper-Version, liefert das Plugin das Pack nicht aus, meldet das im Log und
+  funktioniert sonst unverändert. Netty ist nur zur Kompilierzeit eingebunden, Paper bringt es mit.
 
 ## Lizenz und Credits
 

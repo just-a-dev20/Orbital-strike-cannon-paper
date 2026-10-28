@@ -46,7 +46,12 @@ public record RailgunConfig(
     public record Recipe(boolean enabled, boolean discoverOnJoin) {
     }
 
-    public record ResourcePack(boolean enabled, String url, String sha1, boolean required, String prompt, boolean aimOverlay) {
+    public record ResourcePack(boolean enabled, String url, String publicAddress, String sha1, boolean required, String prompt,
+                               boolean aimOverlay) {
+        /** Without a URL the plugin serves the pack itself on the game port. */
+        public boolean selfHosted() {
+            return url.isEmpty();
+        }
     }
 
     public static RailgunConfig load(FileConfiguration file, Logger logger) {
@@ -93,6 +98,7 @@ public record RailgunConfig(
         ResourcePack pack = new ResourcePack(
                 p.getBoolean("enabled", false),
                 p.getString("url", "").trim(),
+                p.getString("public-address", "").trim(),
                 p.getString("sha1", "").trim(),
                 p.getBoolean("required", false),
                 p.getString("prompt", ""),
