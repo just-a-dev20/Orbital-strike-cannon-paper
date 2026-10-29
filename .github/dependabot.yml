@@ -1,0 +1,21 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      gradle:
+        patterns: ["*"]
+    ignore:
+      # Both move together with the Minecraft version (gradle.properties); Netty must match the one bundled with Paper.
+      - dependency-name: io.papermc.paper:paper-api
+      - dependency-name: io.netty:*
