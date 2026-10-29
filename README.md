@@ -46,18 +46,19 @@ Ohne lokales Java: Die GitHub Action `.github/workflows/build.yml` baut das Plug
 Pull Request. Das fertige Jar steht im jeweiligen Lauf unter **Actions → Build → Artifacts →
 OrbitalRailgun** zum Download (sofern das Artefakt-Kontingent des Kontos nicht voll ist).
 
-Für eine veröffentlichte Version ein Tag pushen:
+Eine Version veröffentlichen: unter **Actions → Build → Run workflow** eine Version eintragen
+(z. B. `1.0.1`) und starten. Alternativ ein Tag pushen:
 
 ```bash
-git tag v1.0.0
+git tag v1.0.1
 ```
 
 ```bash
-git push origin v1.0.0
+git push origin v1.0.1
 ```
 
-Die Action baut dann genau diese Version und legt unter **Releases** ein Release mit dem Jar an.
-Release-Dateien zählen nicht zum Artefakt-Kontingent.
+In beiden Fällen baut die Action genau diese Version und legt unter **Releases** ein Release mit
+dem Jar an. Release-Dateien zählen nicht zum Artefakt-Kontingent.
 
 ## Resource-Pack (optional)
 
