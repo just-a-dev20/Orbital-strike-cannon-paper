@@ -27,9 +27,12 @@ jobs:
       - name: Build plugin
         run: ./gradlew build
 
+      # A full artifact storage quota of the account must not turn a successful build red.
       - name: Upload plugin jar
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
+        continue-on-error: true
         with:
           name: OrbitalRailgun
           path: build/libs/OrbitalRailgun-*.jar
           if-no-files-found: error
+          retention-days: 14
