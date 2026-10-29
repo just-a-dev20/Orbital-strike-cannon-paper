@@ -32,8 +32,7 @@ final class CylinderEraser {
     private final RailgunConfig.Destruction settings;
     private final boolean fireEvents;
     private final int minY;
-    private final int radius;
-    private final boolean[][] rim;
+    private final Cylinder cylinder;
     private int[] xs;
     private int[] zs;
     private int[] tops;
@@ -51,25 +50,14 @@ final class CylinderEraser {
         this.settings = settings;
         this.fireEvents = fireEvents;
         this.minY = world.getMinHeight();
-        this.radius = radius;
-        this.rim = new boolean[radius * 2 + 1][radius * 2 + 1];
-
-        List<int[]> columns = new ArrayList<>();
-        for (int dx = -radius; dx <= radius; dx++) {
-            for (int dz = -radius; dz <= radius; dz++) {
-                if (inside(dx, dz)) {
-                    rim[dx + radius][dz + radius] = !inside(dx + 1, dz) || !inside(dx - 1, dz) || !inside(dx, dz + 1) || !inside(dx, dz - 1);
-                    columns.add(new int[] {center.getBlockX() + dx, center.getBlockZ() + dz});
-                }
-            }
+        this.cylinder = new Cylinder(radius);
+        this.xs = new int[cylinder.size()];
+        this.zs = new int[cylinder.size()];
+        for (int i = 0; i < xs.length; i++) {
+            xs[i] = center.getBlockX() + cylinder.dx(i);
+            zs[i] = center.getBlockZ() + cylinder.dz(i);
         }
-        this.xs = columns.stream().mapToInt(column -> column[0]).toArray();
-        this.zs = columns.stream().mapToInt(column -> column[1]).toArray();
         this.tops = new int[xs.length];
-    }
-
-    private boolean inside(int dx, int dz) {
-        return dx * dx + dz * dz <= radius * radius;
     }
 
     boolean done() {
@@ -149,13 +137,8 @@ final class CylinderEraser {
         if (batch.isEmpty()) {
             return;
         }
-        int cx = center.getBlockX();
-        int cz = center.getBlockZ();
         for (Block block : fireEvents ? protectionFiltered(batch) : batch) {
-            int dx = block.getX() - cx + radius;
-            int dz = block.getZ() - cz + radius;
-            boolean edge = dx < 0 || dz < 0 || dx >= rim.length || dz >= rim.length || rim[dx][dz];
-            block.setType(Material.AIR, edge);
+            block.setType(Material.AIR, cylinder.rim(block.getX() - center.getBlockX(), block.getZ() - center.getBlockZ()));
         }
     }
 
