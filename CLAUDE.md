@@ -16,7 +16,8 @@ where needed. User-facing text (README, `config.yml` comments) is German; code a
 ## Commands
 
 ```bash
-./gradlew build                          # jar in build/libs/OrbitalRailgun-<version>.jar
+./gradlew build                          # jar in build/libs/OrbitalRailgun-<version>.jar, runs the tests
+./gradlew test                           # JUnit tests only
 ./gradlew build -PpluginVersion=1.2.3    # override the version (used by the release workflow)
 ./gradlew runServer                      # run-paper test server in run/ (gitignored)
 ```
@@ -25,7 +26,9 @@ where needed. User-facing text (README, `config.yml` comments) is German; code a
   needs Gradle 9, so use the wrapper, not an older system Gradle.
 - Versions are pinned in `gradle.properties` (`paperApiVersion`, `nettyVersion` = the Netty bundled with that Paper).
 - The PaperMC repository is listed before Maven Central on purpose: Central returned HTTP 429 through the sandbox proxy.
-- There are no unit tests (`src/test` does not exist). Verification is done on a real server, see below.
+- `src/test` covers what runs without a server: `PackRequestHandler` (Netty `EmbeddedChannel`), the limits in
+  `RailgunConfig.load` and the `Cylinder` geometry. Anything that touches registries (e.g. `Material.isBlock()`)
+  throws without a server; verify gameplay on a real server, see below.
 
 ## Architecture
 
@@ -50,6 +53,10 @@ use packet arrived for `aim.release-timeout-ticks`. Left click into the air arri
 `ignoreCancelled = true`. The item is identified by a PDC tag (`RailgunItem.isRailgun`), its look is
 `item_model = minecraft:crossbow` + `custom_model_data` string `orbital_railgun`.
 
+Vanilla does not save item cooldowns, so `aim/RailgunCooldown` also stores the end (wall clock) in the player's PDC,
+checks it when aiming starts and when firing, and restores the item cooldown on join. While a notice (cooldown,
+blocked, strike limit) is fresh, the aim action bar holds back so the notice stays readable.
+
 ### Strike pipeline (`strike/`)
 
 - `Strike` follows the mod's `OrbitalRailgunStrikeManager`: entity snapshot of a 500³ box at launch, pull during the
@@ -58,7 +65,9 @@ use packet arrived for `aim.release-timeout-ticks`. Left click into the air arri
 - `CylinderEraser` removes x²+z² ≤ r² over the whole world height top-down in 256-block batches. Each batch first
   fires an `EntityExplodeEvent` (shooter as source) or `BlockExplodeEvent` (console/offline shooter) so protection
   plugins (tested with WorldGuard: `build`, `other-explosion`) can filter it. Only rim columns use physics.
-- `StrikeManager` shares `destruction.blocks-per-tick` and `max-millis-per-tick` across all strikes.
+- `StrikeManager` shares `destruction.blocks-per-tick` and `max-millis-per-tick` across all strikes. `launch()` also
+  enforces `strike.max-concurrent` (for `/railgun strike` too) before firing the `OrbitalStrikeEvent`.
+- The column/rim geometry lives in `Cylinder` (pure, unit-tested); `CylinderEraser` only does world access.
 - Performance lesson: use **hard deadlines checked inside the tick**, not budgets adjusted after the fact. Cold code
   paths produced 100–200 ms ticks. The same applies to damage (time-sliced) and display entities (spawned/removed one
   per tick via `prepare()`/`removeOne()`).
@@ -103,6 +112,10 @@ answers connections that start with `GET `/`HEAD`, passing everything else to Mi
 
 ## CI and releases
 
-`.github/workflows/build.yml` builds on every push/PR. The artifact upload is `continue-on-error` because the account's
-artifact quota was full. Releases: run the workflow manually with a `version` input (creates tag + release via `gh`),
-or push a `v*` tag. Pushing tags from a Claude Code cloud session is rejected (HTTP 403); use the manual run instead.
+`.github/workflows/build.yml` builds (and tests) on every push; `pull_request` runs only for forks, because branches of
+this repo already build on push. A concurrency group cancels superseded builds except on the default branch. The
+artifact upload is `continue-on-error` because the account's artifact quota was full. Dependabot
+(`.github/dependabot.yml`) updates actions and Gradle dependencies weekly; `paper-api` and Netty are ignored because
+they move with the Minecraft version. Releases: run the workflow manually with a `version` input (creates tag +
+release via `gh`), or push a `v*` tag. Pushing tags from a Claude Code cloud session is rejected (HTTP 403); use the
+manual run instead.
