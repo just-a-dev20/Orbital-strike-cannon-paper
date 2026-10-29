@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   build:
+    if: github.ref_type != 'tag'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -36,3 +37,36 @@ jobs:
           path: build/libs/OrbitalRailgun-*.jar
           if-no-files-found: error
           retention-days: 14
+
+  # Pushing a tag like v1.2.0 builds that version and publishes it as a GitHub release.
+  # Release files do not count towards the artifact storage quota.
+  release:
+    if: github.ref_type == 'tag' && startsWith(github.ref_name, 'v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Build plugin
+        run: ./gradlew build -PpluginVersion="${GITHUB_REF_NAME#v}"
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          jar="build/libs/OrbitalRailgun-${GITHUB_REF_NAME#v}.jar"
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "$jar" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "$jar" --title "Orbital Railgun ${GITHUB_REF_NAME}" --generate-notes
+          fi

@@ -44,7 +44,20 @@ Das Jar liegt danach unter `build/libs/`. Gradle lädt die Java-25-Toolchain bei
 
 Ohne lokales Java: Die GitHub Action `.github/workflows/build.yml` baut das Plugin bei jedem Push und
 Pull Request. Das fertige Jar steht im jeweiligen Lauf unter **Actions → Build → Artifacts →
-OrbitalRailgun** zum Download.
+OrbitalRailgun** zum Download (sofern das Artefakt-Kontingent des Kontos nicht voll ist).
+
+Für eine veröffentlichte Version ein Tag pushen:
+
+```bash
+git tag v1.0.0
+```
+
+```bash
+git push origin v1.0.0
+```
+
+Die Action baut dann genau diese Version und legt unter **Releases** ein Release mit dem Jar an.
+Release-Dateien zählen nicht zum Artefakt-Kontingent.
 
 ## Resource-Pack (optional)
 
