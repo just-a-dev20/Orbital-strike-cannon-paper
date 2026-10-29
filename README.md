@@ -42,6 +42,10 @@ Bauen aus dem Quellcode:
 
 Das Jar liegt danach unter `build/libs/`. Gradle lädt die Java-25-Toolchain bei Bedarf automatisch.
 
+Ohne lokales Java: Die GitHub Action `.github/workflows/build.yml` baut das Plugin bei jedem Push und
+Pull Request. Das fertige Jar steht im jeweiligen Lauf unter **Actions → Build → Artifacts →
+OrbitalRailgun** zum Download.
+
 ## Resource-Pack (optional)
 
 Ohne Pack sieht die Railgun aus wie eine Armbrust mit violettem Namen, und die Texte erscheinen in
