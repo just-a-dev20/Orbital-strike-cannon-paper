@@ -16,6 +16,7 @@ public final class RailgunKeys {
     public static final NamespacedKey ITEM_TAG = new NamespacedKey(NAMESPACE, "railgun");
     public static final NamespacedKey RECIPE = new NamespacedKey(NAMESPACE, "orbital_railgun");
     public static final NamespacedKey AIM_MODIFIER = new NamespacedKey(NAMESPACE, "aim");
+    public static final NamespacedKey COOLDOWN_END = new NamespacedKey(NAMESPACE, "cooldown_end");
 
     public static final String PERMISSION_USE = "orbitalrailgun.use";
     public static final String PERMISSION_GIVE = "orbitalrailgun.give";

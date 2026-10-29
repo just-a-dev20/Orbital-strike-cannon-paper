@@ -41,6 +41,7 @@ import org.bukkit.event.player.PlayerGameModeChangeEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerItemHeldEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerSwapHandItemsEvent;
 import org.bukkit.inventory.EquipmentSlot;
@@ -61,6 +62,8 @@ public final class AimController implements Listener {
     private static final Component OVERLAY = Component.text("").font(RailgunKeys.OVERLAY_FONT).shadowColor(ShadowColor.none());
     private static final Title.Times OVERLAY_TIMES = Title.Times.times(Duration.ZERO, Duration.ofMillis(1500), Duration.ofMillis(150));
     private static final int NOTICE_INTERVAL = 20;
+    /** The target display waits this long after a notice, so the notice can be read. */
+    private static final int NOTICE_HOLD = 40;
 
     private final Plugin plugin;
     private final Supplier<RailgunConfig> config;
@@ -154,6 +157,11 @@ public final class AimController implements Listener {
     }
 
     @EventHandler
+    public void onJoin(PlayerJoinEvent event) {
+        RailgunCooldown.restore(event.getPlayer(), config.get().strike().cooldownTicks());
+    }
+
+    @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         stop(event.getPlayer());
         lastNotice.remove(event.getPlayer().getUniqueId());
@@ -190,9 +198,7 @@ public final class AimController implements Listener {
             notice(player, messages.get().tr("orbital_railgun.world_disabled"));
             return;
         }
-        int cooldown = player.getCooldown(item);
-        if (cooldown > 0) {
-            notice(player, messages.get().tr("orbital_railgun.cooldown", (cooldown + 19) / 20));
+        if (coolingDown(player, item, settings)) {
             return;
         }
         ParticleDraw draw = new ParticleDraw(player.getWorld(), Math.max(settings.effects().particleMultiplier(), 0.25))
@@ -237,7 +243,7 @@ public final class AimController implements Listener {
         if (session.target != null && session.terrain != null && age % 2 == 0) {
             AreaIndicator.draw(session.draw, player.getEyeLocation(), session.target, session.terrain, settings.strike().radius(), session.seconds(now));
         }
-        if (settings.aim().actionBar() && age % 5 == 0) {
+        if (settings.aim().actionBar() && age % 5 == 0 && !noticeShowing(player, now)) {
             player.sendActionBar(targetText(player, session.target));
         }
         if (settings.resourcePack().aimOverlay() && pack.hasPack(player) && age % 10 == 0) {
@@ -257,20 +263,33 @@ public final class AimController implements Listener {
     private void fire(AimSession session) {
         Player player = session.player;
         RailgunConfig settings = config.get();
+        ItemStack item = player.getInventory().getItem(session.hand);
+        if (coolingDown(player, item, settings)) {
+            return;
+        }
         Block target = target(player, settings.strike().maxRange());
         if (target == null) {
             player.playSound(player, Sound.BLOCK_DISPENSER_FAIL, SoundCategory.PLAYERS, 1f, 1.2f);
             return;
         }
-        ItemStack item = player.getInventory().getItem(session.hand);
-        if (!strikes.launch(player, target)) {
-            notice(player, messages.get().tr("orbital_railgun.strike_blocked"));
+        StrikeManager.Launch launch = strikes.launch(player, target);
+        if (launch != StrikeManager.Launch.STARTED) {
+            notice(player, messages.get().tr(launch == StrikeManager.Launch.LIMIT_REACHED
+                    ? "orbital_railgun.strike_limit" : "orbital_railgun.strike_blocked"));
             return;
         }
         if (settings.strike().cooldownTicks() > 0) {
-            player.setCooldown(item, settings.strike().cooldownTicks());
+            RailgunCooldown.start(player, item, settings.strike().cooldownTicks());
         }
         stop(session);
+    }
+
+    private boolean coolingDown(Player player, ItemStack item, RailgunConfig settings) {
+        int cooldown = RailgunCooldown.remaining(player, item, settings.strike().cooldownTicks());
+        if (cooldown > 0) {
+            notice(player, messages.get().tr("orbital_railgun.cooldown", (cooldown + 19) / 20));
+        }
+        return cooldown > 0;
     }
 
     /** The same ray as the mod's client: 300 blocks, block outlines, fluids ignored. */
@@ -298,6 +317,11 @@ public final class AimController implements Listener {
             lastNotice.put(player.getUniqueId(), now);
             player.sendActionBar(message);
         }
+    }
+
+    private boolean noticeShowing(Player player, int now) {
+        Integer last = lastNotice.get(player.getUniqueId());
+        return last != null && now - last < NOTICE_HOLD;
     }
 
     private void stop(Player player) {

@@ -21,7 +21,8 @@ public record RailgunConfig(
         Recipe recipe,
         ResourcePack resourcePack) {
 
-    public record Strike(int radius, int chargeTicks, int cooldownTicks, double maxRange, Set<String> allowedWorlds, boolean pull) {
+    public record Strike(int radius, int chargeTicks, int cooldownTicks, double maxRange, Set<String> allowedWorlds, boolean pull,
+                         int maxConcurrent) {
         public boolean allowedIn(World world) {
             return allowedWorlds.isEmpty() || allowedWorlds.contains(world.getName());
         }
@@ -62,7 +63,8 @@ public record RailgunConfig(
                 clamp(s.getInt("cooldown-ticks", 2400), 0, 1_728_000),
                 clamp(s.getDouble("max-range", 300), 16, 512),
                 Set.copyOf(s.getStringList("allowed-worlds")),
-                s.getBoolean("pull", true));
+                s.getBoolean("pull", true),
+                clamp(s.getInt("max-concurrent", 3), 0, 1000));
 
         ConfigurationSection d = section(file, "damage");
         Damage damage = new Damage(d.getBoolean("enabled", true), Math.max(0, d.getDouble("amount", 100000)),

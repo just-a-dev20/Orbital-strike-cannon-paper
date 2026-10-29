@@ -28,17 +28,26 @@ public final class StrikeManager {
         this.tickets = new ChunkTickets(plugin);
     }
 
-    /** Starts a strike on {@code target}; returns false if a plugin cancelled the {@link OrbitalStrikeEvent}. */
-    public boolean launch(@Nullable Player shooter, Block target) {
+    public enum Launch { STARTED, CANCELLED, LIMIT_REACHED }
+
+    /**
+     * Starts a strike on {@code target} unless {@code strike.max-concurrent} strikes are already running or a plugin
+     * cancels the {@link OrbitalStrikeEvent}.
+     */
+    public Launch launch(@Nullable Player shooter, Block target) {
         RailgunConfig current = config.get();
+        int limit = current.strike().maxConcurrent();
+        if (limit > 0 && strikes.size() >= limit) {
+            return Launch.LIMIT_REACHED;
+        }
         OrbitalStrikeEvent event = new OrbitalStrikeEvent(shooter, target.getLocation().add(0.5, 0.5, 0.5), current.strike().radius());
         if (!event.callEvent()) {
-            return false;
+            return Launch.CANCELLED;
         }
         strikes.add(new Strike(tickets, current, shooter, target, Bukkit.getCurrentTick()));
         plugin.getLogger().info("Orbital strike " + (shooter != null ? "fired by " + shooter.getName() : "called in")
                 + " at " + target.getWorld().getName() + " " + target.getX() + " " + target.getY() + " " + target.getZ());
-        return true;
+        return Launch.STARTED;
     }
 
     public void tick() {
