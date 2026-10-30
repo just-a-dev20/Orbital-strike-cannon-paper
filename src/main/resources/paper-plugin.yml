@@ -6,7 +6,7 @@ api-version: '${minecraftVersion}'
 description: Server-side Paper port of the Orbital Railgun mod by Mishkis. No client mods required.
 authors: [just-a-dev20]
 contributors: [Mishkis]
-website: https://github.com/just-a-dev20/orbital-strike-cannon
+website: https://github.com/just-a-dev20/Orbital-strike-cannon-paper
 
 permissions:
   orbitalrailgun.use:

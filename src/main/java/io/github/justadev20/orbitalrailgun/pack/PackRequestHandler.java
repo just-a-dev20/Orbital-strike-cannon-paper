@@ -17,6 +17,10 @@ import org.jspecify.annotations.Nullable;
  */
 final class PackRequestHandler extends ChannelInboundHandlerAdapter {
     private static final int MAX_REQUEST_BYTES = 8192;
+    private static final ByteBuf HEADER_END = Unpooled.unreleasableBuffer(
+            Unpooled.wrappedBuffer("\r\n\r\n".getBytes(StandardCharsets.US_ASCII)).asReadOnly());
+    /** The path contains the pack's SHA-1, so a response for it never changes. */
+    private static final String CACHE_FOUND = "public, max-age=31536000, immutable";
 
     private final Supplier<GamePortHost.@Nullable ServedPack> pack;
     private @Nullable ByteBuf received;
@@ -47,7 +51,7 @@ final class PackRequestHandler extends ChannelInboundHandlerAdapter {
             ctx.pipeline().remove(this);
             return;
         }
-        int headerEnd = ByteBufUtil.indexOf(Unpooled.wrappedBuffer("\r\n\r\n".getBytes(StandardCharsets.US_ASCII)), received);
+        int headerEnd = ByteBufUtil.indexOf(HEADER_END, received);
         if (headerEnd < 0) {
             if (received.readableBytes() > MAX_REQUEST_BYTES) {
                 ctx.close();
@@ -67,7 +71,7 @@ final class PackRequestHandler extends ChannelInboundHandlerAdapter {
         String header = (found ? "HTTP/1.1 200 OK" : "HTTP/1.1 404 Not Found") + "\r\n"
                 + "Content-Type: " + (found ? "application/zip" : "text/plain") + "\r\n"
                 + "Content-Length: " + body.length + "\r\n"
-                + "Cache-Control: no-cache\r\n"
+                + "Cache-Control: " + (found ? CACHE_FOUND : "no-cache") + "\r\n"
                 + "Connection: close\r\n\r\n";
         ctx.write(Unpooled.wrappedBuffer(header.getBytes(StandardCharsets.US_ASCII)));
         ctx.writeAndFlush(head ? Unpooled.EMPTY_BUFFER : Unpooled.wrappedBuffer(body)).addListener(ChannelFutureListener.CLOSE);

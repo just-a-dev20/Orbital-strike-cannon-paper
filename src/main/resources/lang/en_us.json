@@ -13,6 +13,7 @@
   "orbital_railgun.no_permission": "You are not allowed to use the Orbital Railgun.",
   "orbital_railgun.world_disabled": "The Orbital Railgun is disabled in this world.",
   "orbital_railgun.strike_blocked": "The orbital strike was blocked.",
+  "orbital_railgun.strike_limit": "Too many orbital strikes are active. Try again later.",
   "orbital_railgun.command.given": "Gave an Orbital Railgun to %s player(s).",
   "orbital_railgun.command.reloaded": "Orbital Railgun configuration reloaded.",
   "orbital_railgun.command.strike": "Orbital strike called in at %s, %s, %s.",

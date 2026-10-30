@@ -1,5 +1,5 @@
 # Orbital Railgun – Konfiguration
-# Die Standardwerte entsprechen dem Original-Mod von Mishkis.
+# Die Standardwerte entsprechen dem Original-Mod von Mishkis (Ausnahme: strike.max-concurrent).
 # Zeiten sind in Ticks angegeben (20 Ticks = 1 Sekunde).
 
 # Sprache der Texte für Spieler ohne Resource-Pack (Dateien unter lang/ im Plugin-Jar),
@@ -11,7 +11,8 @@ strike:
   radius: 24
   # Zeit vom Schuss bis zum Einschlag (Original: 700 Ticks = 35 s).
   charge-ticks: 700
-  # Abklingzeit nach dem Schuss (Original: 2400 Ticks = 120 s).
+  # Abklingzeit nach dem Schuss (Original: 2400 Ticks = 120 s). Sie läuft in Echtzeit weiter, auch über
+  # Aus- und Einloggen und Neustarts hinweg.
   cooldown-ticks: 2400
   # Maximale Zielentfernung in Blöcken (Original: 300).
   max-range: 300
@@ -19,6 +20,9 @@ strike:
   allowed-worlds: []
   # Sog in Richtung Zentrum in den letzten 15 s vor dem Einschlag.
   pull: true
+  # Höchstens so viele Angriffe gleichzeitig auf dem ganzen Server (0 = unbegrenzt wie im Original).
+  # Jeder Angriff erfasst eine 500³-Box und zieht deren Entities an; das begrenzt die Last.
+  max-concurrent: 3
 
 damage:
   enabled: true

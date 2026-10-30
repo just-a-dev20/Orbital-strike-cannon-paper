@@ -6,6 +6,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.github.justadev20.orbitalrailgun.OrbitalRailgunPlugin;
 import io.github.justadev20.orbitalrailgun.RailgunKeys;
+import io.github.justadev20.orbitalrailgun.strike.StrikeManager;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
@@ -69,8 +70,10 @@ public final class RailgunCommand {
         World world = context.getSource().getLocation().getWorld();
         Block target = world.getBlockAt(position.blockX(), position.blockY(), position.blockZ());
         Player shooter = context.getSource().getExecutor() instanceof Player player ? player : null;
-        if (!plugin.strikes().launch(shooter, target)) {
-            context.getSource().getSender().sendMessage(plugin.messages().tr("orbital_railgun.strike_blocked"));
+        StrikeManager.Launch launch = plugin.strikes().launch(shooter, target);
+        if (launch != StrikeManager.Launch.STARTED) {
+            context.getSource().getSender().sendMessage(plugin.messages().tr(launch == StrikeManager.Launch.LIMIT_REACHED
+                    ? "orbital_railgun.strike_limit" : "orbital_railgun.strike_blocked"));
             return 0;
         }
         context.getSource().getSender().sendMessage(plugin.messages().tr("orbital_railgun.command.strike", target.getX(), target.getY(), target.getZ()));

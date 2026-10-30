@@ -13,6 +13,7 @@
   "orbital_railgun.no_permission": "Du darfst die Orbital Railgun nicht benutzen.",
   "orbital_railgun.world_disabled": "Die Orbital Railgun ist in dieser Welt deaktiviert.",
   "orbital_railgun.strike_blocked": "Der Orbitalangriff wurde blockiert.",
+  "orbital_railgun.strike_limit": "Zu viele Orbitalangriffe sind aktiv. Versuche es später erneut.",
   "orbital_railgun.command.given": "Orbital Railgun an %s Spieler vergeben.",
   "orbital_railgun.command.reloaded": "Konfiguration der Orbital Railgun neu geladen.",
   "orbital_railgun.command.strike": "Orbitalangriff auf %s, %s, %s angefordert.",

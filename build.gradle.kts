@@ -13,9 +13,18 @@ repositories {
     mavenCentral()
 }
 
+val paperApi = "io.papermc.paper:paper-api:${providers.gradleProperty("paperApiVersion").get()}"
+val nettyTransport = "io.netty:netty-transport:${providers.gradleProperty("nettyVersion").get()}"
+
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:${providers.gradleProperty("paperApiVersion").get()}")
-    compileOnly("io.netty:netty-transport:${providers.gradleProperty("nettyVersion").get()}")
+    compileOnly(paperApi)
+    compileOnly(nettyTransport)
+
+    testImplementation(paperApi)
+    testImplementation(nettyTransport)
+    testImplementation(platform("org.junit:junit-bom:6.1.3"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 }
 
 java {
@@ -36,6 +45,10 @@ tasks {
         filesMatching("paper-plugin.yml") {
             expand(props)
         }
+    }
+
+    test {
+        useJUnitPlatform()
     }
 
     jar {

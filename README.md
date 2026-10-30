@@ -16,7 +16,8 @@ Server-Resource-Pack liefert das originale 3D-Modell und die Übersetzungen nach
    Entfernung (bis 300 Blöcke).
 3. **Linksklick**, während Rechtsklick gehalten wird, feuert.
 4. Nach 35 Sekunden schlägt der Strahl ein. Alles im Zylinder mit Radius 24 verschwindet, vom
-   Weltboden bis zum Himmel, Grundgestein eingeschlossen. Die Abklingzeit beträgt 120 Sekunden.
+   Weltboden bis zum Himmel, Grundgestein eingeschlossen. Die Abklingzeit beträgt 120 Sekunden und
+   läuft auch über Aus- und Einloggen und Server-Neustarts hinweg weiter.
 
 Rezept (geformt):
 
@@ -34,6 +35,18 @@ Voraussetzungen: Paper 26.3 und Java 25.
 2. Server starten. `plugins/OrbitalRailgun/config.yml` wird angelegt.
 3. Optional das Resource-Pack einrichten (siehe unten).
 
+> **Achtung bei Survival-Servern:** Die Standardwerte entsprechen dem Original. Jeder Spieler darf die
+> Railgun benutzen (`orbitalrailgun.use` ist für alle freigegeben), das Rezept ist aktiv und ein Schuss
+> zerstört auch Grundgestein. Damit kann jeder Spieler, der die Zutaten hat, zum Beispiel am Spawn ein
+> Loch bis ins Void schießen. Vor dem Einsatz auf einem öffentlichen Server deshalb mindestens eines
+> davon anpassen:
+> - `orbitalrailgun.use` der Standardgruppe entziehen und nur ausgewählten Gruppen geben, mit LuckPerms
+>   etwa `lp group default permission set orbitalrailgun.use false`.
+> - `recipe.enabled: false` setzen. Dann gibt es die Railgun nur per `/railgun give`.
+> - `destruction.destroy-bedrock: false` setzen und/oder die Railgun über `strike.allowed-worlds` auf
+>   eine Farm- oder Eventwelt beschränken.
+> - Spawn und Grundstücke mit einem Schutz-Plugin sichern (siehe [Schutz-Plugins](#schutz-plugins)).
+
 Bauen aus dem Quellcode:
 
 ```bash
@@ -42,8 +55,9 @@ Bauen aus dem Quellcode:
 
 Das Jar liegt danach unter `build/libs/`. Gradle lädt die Java-25-Toolchain bei Bedarf automatisch.
 
-Ohne lokales Java: Die GitHub Action `.github/workflows/build.yml` baut das Plugin bei jedem Push und
-Pull Request. Das fertige Jar steht im jeweiligen Lauf unter **Actions → Build → Artifacts →
+Ohne lokales Java: Die GitHub Action `.github/workflows/build.yml` baut das Plugin und führt die Tests
+aus, bei jedem Push und bei Pull Requests aus Forks (Branches dieses Repos sind schon über den Push
+gebaut). Das fertige Jar steht im jeweiligen Lauf unter **Actions → Build → Artifacts →
 OrbitalRailgun** zum Download (sofern das Artefakt-Kontingent des Kontos nicht voll ist).
 
 Eine Version veröffentlichen: unter **Actions → Build → Run workflow** eine Version eintragen
@@ -104,10 +118,11 @@ nie eine fehlende Textur.
 | `language` | `en_us` | Sprache der Texte für Spieler ohne Pack (`de_de`, `fr_fr`, … – alle 15 Sprachen der Mod) |
 | `strike.radius` | `24` | Radius von Zerstörung und Schaden (1–64) |
 | `strike.charge-ticks` | `700` | Zeit vom Schuss bis zum Einschlag (35 s) |
-| `strike.cooldown-ticks` | `2400` | Abklingzeit (120 s), gilt für alle Railguns eines Spielers |
+| `strike.cooldown-ticks` | `2400` | Abklingzeit (120 s), gilt für alle Railguns eines Spielers und läuft in Echtzeit, auch über Ausloggen und Neustarts hinweg |
 | `strike.max-range` | `300` | Zielentfernung in Blöcken |
 | `strike.allowed-worlds` | `[]` | erlaubte Welten; leer bedeutet alle |
 | `strike.pull` | `true` | Sog zum Zentrum in den letzten 15 s |
+| `strike.max-concurrent` | `3` | höchstens so viele Strikes gleichzeitig auf dem ganzen Server; `0` = unbegrenzt wie im Original |
 | `damage.enabled` / `damage.amount` | `true` / `100000` | Schaden beim Einschlag (Kugel mit dem Strike-Radius) |
 | `damage.attribute-to-shooter` | `false` | `true`: Der Schütze gilt als Angreifer, PvP-Schutz greift |
 | `destruction.enabled` | `true` | Blöcke entfernen |
@@ -134,7 +149,7 @@ nie eine fehlende Textur.
 |---|---|---|
 | `/railgun give <Spieler>` | `orbitalrailgun.give` (OP) | Railgun geben |
 | `/railgun reload` | `orbitalrailgun.admin` (OP) | Konfiguration und Pack neu laden |
-| `/railgun strike <x y z>` | `orbitalrailgun.admin` | Strike ohne Railgun auslösen (zum Testen) |
+| `/railgun strike <x y z>` | `orbitalrailgun.admin` | Strike ohne Railgun auslösen (zum Testen; zählt zu `strike.max-concurrent`) |
 | `/railgun stop` | `orbitalrailgun.admin` | alle laufenden Strikes sofort abbrechen |
 | – | `orbitalrailgun.use` (alle) | Railgun benutzen |
 
@@ -165,7 +180,7 @@ nie eine fehlende Textur.
   100 000 Schaden mit dem eigenen Schadenstyp `orbital_railgun:strike` und dessen Todesnachricht.
 - Zerstörungsform: Zylinder x² + z² ≤ r² über die gesamte Welthöhe, Grundgestein eingeschlossen,
   ohne Drops. Am Rand laufen Nachbar-Updates, Wasser fließt also nach.
-- Mehrere Strikes gleichzeitig sind möglich. Die Abklingzeit gilt für alle Railguns gemeinsam.
+- Die Abklingzeit gilt für alle Railguns gemeinsam.
 
 **Angenähert:**
 - **Steuerung:** Ein Vanilla-Client verschluckt Linksklicks, solange er ein Item „benutzt“. Die
@@ -207,6 +222,12 @@ nie eine fehlende Textur.
 - Das Original vertraut dem Client: Das Schuss-Paket enthält eine beliebige Blockposition, der
   Server prüft weder Abklingzeit noch Item. Hier entscheidet der Server per eigenem Raytrace.
 - Die Chunks des Zylinders bleiben vom Schuss bis zum Ende des Abbaus geladen.
+- Die Abklingzeit übersteht Aus- und Einloggen und Neustarts. Vanilla speichert Item-Abklingzeiten
+  nicht, im Original endet sie deshalb mit dem Ausloggen. Das Plugin merkt sich den Endzeitpunkt
+  zusätzlich in den Spielerdaten (PDC) und prüft ihn beim Zielen und Feuern.
+- Gleichzeitig laufen standardmäßig höchstens 3 Strikes (`strike.max-concurrent`), im Original
+  beliebig viele. Jeder Strike erfasst eine 500³-Box und zieht deren Entities an. Wer am Limit feuert,
+  bekommt einen Hinweis; die Abklingzeit startet dann nicht.
 - Im Original sind nur Entities betroffen, die beim Schuss in der Box waren; Spieler, die später
   dazukommen, sehen dort nichts. Hier sieht jeder in Reichweite die Effekte.
 
@@ -227,12 +248,15 @@ lässt sie sich abschalten. Das Abbau-Tempo regeln `destruction.blocks-per-tick`
 
 ## Entwicklung und Tests
 
+- `./gradlew test` (läuft auch bei `./gradlew build`) prüft ohne Server: die Pack-Auslieferung über
+  den Spielport mit Nettys `EmbeddedChannel` (GET, HEAD, 404, Durchreichen von Minecraft-Verkehr), die
+  Grenzwerte der Konfiguration und die Zylinder- und Rand-Berechnung des Abbaus.
 - `./gradlew runServer` startet einen Paper-26.3-Testserver in `run/` (über run-paper).
 - `tools/test_bot.py` ist ein minimaler Offline-Client für das 26.3-Protokoll (777). Er sendet
   genau die Pakete eines Vanilla-Clients: Use-Paket alle 4 Ticks beim Halten, Punch-Paket bzw.
-  `START_DESTROY_BLOCK` beim Linksklick. Damit sind Zielen, Feuern, Loslassen, Abklingzeit, Schaden
-  und Todesnachricht automatisiert geprüft. Vorausgesetzt ist `online-mode=false` und
-  `network-compression-threshold=-1`.
+  `START_DESTROY_BLOCK` beim Linksklick. Damit sind Zielen, Feuern, Loslassen, Abklingzeit (auch nach
+  Neu-Einloggen und Neustart), Strike-Limit, Schaden und Todesnachricht automatisiert geprüft.
+  Vorausgesetzt ist `online-mode=false` und `network-compression-threshold=-1`.
 - `tools/convert_geckolib_model.py` erzeugt das Vanilla-Item-Modell aus dem GeckoLib-Modell der
   Mod. Die Umrechnung entspricht GeckoLibs Renderer: X gespiegelt, Rotationen um X und Y negiert,
   Box-UVs wie in Blockbench.
