@@ -54,6 +54,7 @@ class RailgunConfigTest {
 
         assertEquals("en_us", config.language());
         assertEquals(new RailgunConfig.Strike(24, 700, 2400, 300, Set.of(), true, 3), config.strike());
+        assertEquals(new RailgunConfig.Ammo(Material.NETHER_STAR, 1), config.ammo());
         assertEquals(new RailgunConfig.Damage(true, 100000, false), config.damage());
         assertEquals(new RailgunConfig.Destruction(true, true, Set.of(), 20000, 10), config.destruction());
         assertTrue(config.fireExplodeEvents());
@@ -75,6 +76,7 @@ class RailgunConfigTest {
 
         assertEquals(defaults.language(), fromFile.language());
         assertEquals(defaults.strike(), fromFile.strike());
+        assertEquals(defaults.ammo(), fromFile.ammo());
         assertEquals(defaults.damage(), fromFile.damage());
         assertEquals(defaults.destruction(), fromFile.destruction());
         assertEquals(defaults.fireExplodeEvents(), fromFile.fireExplodeEvents());
@@ -95,6 +97,7 @@ class RailgunConfigTest {
                 Map.entry("strike.cooldown-ticks", -20),
                 Map.entry("strike.max-range", 1.5),
                 Map.entry("strike.max-concurrent", -1),
+                Map.entry("ammo.amount", -1),
                 Map.entry("damage.amount", -5),
                 Map.entry("destruction.blocks-per-tick", 1),
                 Map.entry("destruction.max-millis-per-tick", 0),
@@ -108,6 +111,8 @@ class RailgunConfigTest {
         assertEquals(0, config.strike().cooldownTicks());
         assertEquals(16, config.strike().maxRange());
         assertEquals(0, config.strike().maxConcurrent());
+        assertEquals(0, config.ammo().amount());
+        assertFalse(config.ammo().required());
         assertEquals(0, config.damage().amount());
         assertEquals(256, config.destruction().blocksPerTick());
         assertEquals(1, config.destruction().maxMillisPerTick());
@@ -125,6 +130,7 @@ class RailgunConfigTest {
                 Map.entry("strike.cooldown-ticks", 2_000_000),
                 Map.entry("strike.max-range", 1000),
                 Map.entry("strike.max-concurrent", 1001),
+                Map.entry("ammo.amount", 65),
                 Map.entry("destruction.blocks-per-tick", 2_000_000),
                 Map.entry("destruction.max-millis-per-tick", 50),
                 Map.entry("effects.view-distance", 1000),
@@ -137,6 +143,7 @@ class RailgunConfigTest {
         assertEquals(1_728_000, config.strike().cooldownTicks());
         assertEquals(512, config.strike().maxRange());
         assertEquals(1000, config.strike().maxConcurrent());
+        assertEquals(64, config.ammo().amount());
         assertEquals(1_000_000, config.destruction().blocksPerTick());
         assertEquals(40, config.destruction().maxMillisPerTick());
         assertEquals(512, config.effects().viewDistance());
@@ -165,6 +172,22 @@ class RailgunConfigTest {
         assertEquals(Set.of(), config.destruction().skipBlocks());
         assertEquals(1, warnings.size());
         assertTrue(warnings.getFirst().contains("NOPE") && warnings.getFirst().contains("minecraft:not_a_block"), warnings.getFirst());
+    }
+
+    @Test
+    void ammoItemAcceptsNamespacedAndLowerCaseNames() {
+        assertEquals(Material.NETHERITE_INGOT, load(Map.of("ammo.item", "minecraft:netherite_ingot")).ammo().item());
+        assertEquals(Material.DIAMOND, load(Map.of("ammo.item", "diamond")).ammo().item());
+        assertTrue(warnings.isEmpty());
+    }
+
+    @Test
+    void unknownOrAirAmmoFallsBackToTheNetherStar() {
+        for (String name : List.of("NOPE", "", "AIR", "minecraft:cave_air")) {
+            assertEquals(Material.NETHER_STAR, load(Map.of("ammo.item", name)).ammo().item(), name);
+        }
+        assertEquals(4, warnings.size());
+        assertTrue(warnings.getFirst().contains("NOPE"), warnings.getFirst());
     }
 
     @Test

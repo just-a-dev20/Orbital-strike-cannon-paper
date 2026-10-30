@@ -198,7 +198,7 @@ public final class AimController implements Listener {
             notice(player, messages.get().tr("orbital_railgun.world_disabled"));
             return;
         }
-        if (coolingDown(player, item, settings)) {
+        if (coolingDown(player, item, settings) || missingAmmo(player, settings)) {
             return;
         }
         ParticleDraw draw = new ParticleDraw(player.getWorld(), Math.max(settings.effects().particleMultiplier(), 0.25))
@@ -267,6 +267,10 @@ public final class AimController implements Listener {
         if (coolingDown(player, item, settings)) {
             return;
         }
+        if (missingAmmo(player, settings)) {
+            player.playSound(player, Sound.BLOCK_DISPENSER_FAIL, SoundCategory.PLAYERS, 1f, 1.2f);
+            return;
+        }
         Block target = target(player, settings.strike().maxRange());
         if (target == null) {
             player.playSound(player, Sound.BLOCK_DISPENSER_FAIL, SoundCategory.PLAYERS, 1f, 1.2f);
@@ -278,6 +282,7 @@ public final class AimController implements Listener {
                     ? "orbital_railgun.strike_limit" : "orbital_railgun.strike_blocked"));
             return;
         }
+        RailgunAmmo.consume(player, settings.ammo());
         if (settings.strike().cooldownTicks() > 0) {
             RailgunCooldown.start(player, item, settings.strike().cooldownTicks());
         }
@@ -290,6 +295,15 @@ public final class AimController implements Listener {
             notice(player, messages.get().tr("orbital_railgun.cooldown", (cooldown + 19) / 20));
         }
         return cooldown > 0;
+    }
+
+    private boolean missingAmmo(Player player, RailgunConfig settings) {
+        RailgunConfig.Ammo ammo = settings.ammo();
+        if (RailgunAmmo.has(player, ammo)) {
+            return false;
+        }
+        notice(player, messages.get().tr("orbital_railgun.ammo.missing", ammo.amount(), Component.translatable(ammo.item())));
+        return true;
     }
 
     /** The same ray as the mod's client: 300 blocks, block outlines, fluids ignored. */

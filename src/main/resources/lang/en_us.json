@@ -10,6 +10,7 @@
   "orbital_railgun.aim.target": "Target: %s, %s, %s · %s m",
   "orbital_railgun.aim.no_target": "No target in range",
   "orbital_railgun.cooldown": "Recharging: %s s",
+  "orbital_railgun.ammo.missing": "Firing requires %s × %s",
   "orbital_railgun.no_permission": "You are not allowed to use the Orbital Railgun.",
   "orbital_railgun.world_disabled": "The Orbital Railgun is disabled in this world.",
   "orbital_railgun.strike_blocked": "The orbital strike was blocked.",

@@ -13,6 +13,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 public record RailgunConfig(
         String language,
         Strike strike,
+        Ammo ammo,
         Damage damage,
         Destruction destruction,
         boolean fireExplodeEvents,
@@ -20,11 +21,20 @@ public record RailgunConfig(
         Aim aim,
         Recipe recipe,
         ResourcePack resourcePack) {
+    private static final Material DEFAULT_AMMO = Material.NETHER_STAR;
+    private static final Set<Material> AIR = EnumSet.of(Material.AIR, Material.CAVE_AIR, Material.VOID_AIR);
 
     public record Strike(int radius, int chargeTicks, int cooldownTicks, double maxRange, Set<String> allowedWorlds, boolean pull,
                          int maxConcurrent) {
         public boolean allowedIn(World world) {
             return allowedWorlds.isEmpty() || allowedWorlds.contains(world.getName());
+        }
+    }
+
+    /** What every shot costs; {@code amount} 0 makes it free like in the mod. */
+    public record Ammo(Material item, int amount) {
+        public boolean required() {
+            return amount > 0;
         }
     }
 
@@ -66,6 +76,9 @@ public record RailgunConfig(
                 s.getBoolean("pull", true),
                 clamp(s.getInt("max-concurrent", 3), 0, 1000));
 
+        ConfigurationSection m = section(file, "ammo");
+        Ammo ammo = new Ammo(ammoItem(m.getString("item", DEFAULT_AMMO.name()), logger), clamp(m.getInt("amount", 1), 0, 64));
+
         ConfigurationSection d = section(file, "damage");
         Damage damage = new Damage(d.getBoolean("enabled", true), Math.max(0, d.getDouble("amount", 100000)),
                 d.getBoolean("attribute-to-shooter", false));
@@ -106,13 +119,23 @@ public record RailgunConfig(
                 p.getString("prompt", ""),
                 p.getBoolean("aim-overlay", true));
 
-        return new RailgunConfig(file.getString("language", "en_us"), strike, damage, destruction,
+        return new RailgunConfig(file.getString("language", "en_us"), strike, ammo, damage, destruction,
                 section(file, "protection").getBoolean("fire-explode-events", true), effects, aim, recipe, pack);
     }
 
     private static ConfigurationSection section(FileConfiguration file, String path) {
         ConfigurationSection section = file.getConfigurationSection(path);
         return section != null ? section : file.createSection(path);
+    }
+
+    /** Item-ness needs the server's registries, so only unknown names and air are rejected here. */
+    private static Material ammoItem(String name, Logger logger) {
+        Material material = Material.matchMaterial(name);
+        if (material == null || material.isLegacy() || AIR.contains(material)) {
+            logger.warning("Unknown item '" + name + "' in ammo.item, using " + DEFAULT_AMMO);
+            return DEFAULT_AMMO;
+        }
+        return material;
     }
 
     private static Set<Material> materials(Iterable<String> names, Logger logger) {
