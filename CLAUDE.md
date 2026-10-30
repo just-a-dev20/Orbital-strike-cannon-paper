@@ -27,7 +27,7 @@ where needed. User-facing text (README, `config.yml` comments) is German; code a
 - Versions are pinned in `gradle.properties` (`paperApiVersion`, `nettyVersion` = the Netty bundled with that Paper).
 - The PaperMC repository is listed before Maven Central on purpose: Central returned HTTP 429 through the sandbox proxy.
 - `src/test` covers what runs without a server: `PackRequestHandler` (Netty `EmbeddedChannel`), the limits in
-  `RailgunConfig.load` and the `Cylinder` geometry. Anything that touches registries (e.g. `Material.isBlock()`)
+  `RailgunConfig.load`, the `Cylinder` geometry and `Displays.update` (proxy display). Anything that touches registries (e.g. `Material.isBlock()`)
   throws without a server; verify gameplay on a real server, see below.
 
 ## Architecture
@@ -80,6 +80,9 @@ time is mapped onto the shader's 36 s so the beam coincides with the impact). Di
 are moved via their transformation so they stay in ticketed chunks; billboarded displays cannot be offset that way,
 which is why orbs are spinning `BlockDisplay`s. `aim/TargetMarker` places the shooter-only marker on the line of
 sight at most 16 blocks away and scales it down (targets can be 300 blocks away, beyond entity tracking range).
+Display updates go through `Displays.update`, which skips unchanged transformations: the interpolation delay is always
+sent (`force`), and the client then restarts its last interpolation, so per-tick updates with the same value replay
+the last change every tick (the hidden target marker flashed up at its old size).
 
 ### Resource pack (`pack/`, `src/main/resources/pack`)
 
