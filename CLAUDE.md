@@ -57,6 +57,11 @@ Vanilla does not save item cooldowns, so `aim/RailgunCooldown` also stores the e
 checks it when aiming starts and when firing, and restores the item cooldown on join. While a notice (cooldown,
 blocked, strike limit) is fresh, the aim action bar holds back so the notice stays readable.
 
+`aim/RailgunAmmo`: every shot costs `ammo.amount` × `ammo.item` (default one nether star; 0 = free like the mod),
+searched like a bow searches arrows (off hand, then slots 0–35), never a railgun, free in creative. It is checked when
+aiming starts and when firing, and taken only after `launch()` returned `STARTED`. `RailgunConfig.load` can only reject
+unknown names and air, because `Material.isItem()` needs the registries.
+
 ### Strike pipeline (`strike/`)
 
 - `Strike` follows the mod's `OrbitalRailgunStrikeManager`: entity snapshot of a 500³ box at launch, pull during the

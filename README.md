@@ -14,7 +14,9 @@ Server-Resource-Pack liefert das originale 3D-Modell und die Übersetzungen nach
 2. **Rechtsklick halten**, um zu zielen. Das Ziel wird rot markiert, und der Wirkungsradius
    erscheint als blauer Ring mit Fadenkreuz auf dem Boden. Die Aktionsleiste zeigt Koordinaten und
    Entfernung (bis 300 Blöcke).
-3. **Linksklick**, während Rechtsklick gehalten wird, feuert.
+3. **Linksklick**, während Rechtsklick gehalten wird, feuert. Jeder Schuss verbraucht einen
+   **Netherstern** aus dem Inventar (einstellbar unter `ammo`). Ohne Netherstern startet das Zielen
+   nicht, und die Aktionsleiste zeigt, was fehlt. Spieler im Kreativmodus schießen kostenlos.
 4. Nach 35 Sekunden schlägt der Strahl ein. Alles im Zylinder mit Radius 24 verschwindet, vom
    Weltboden bis zum Himmel, Grundgestein eingeschlossen. Die Abklingzeit beträgt 120 Sekunden und
    läuft auch über Aus- und Einloggen und Server-Neustarts hinweg weiter.
@@ -123,6 +125,7 @@ nie eine fehlende Textur.
 | `strike.allowed-worlds` | `[]` | erlaubte Welten; leer bedeutet alle |
 | `strike.pull` | `true` | Sog zum Zentrum in den letzten 15 s |
 | `strike.max-concurrent` | `3` | höchstens so viele Strikes gleichzeitig auf dem ganzen Server; `0` = unbegrenzt wie im Original |
+| `ammo.item` / `ammo.amount` | `NETHER_STAR` / `1` | Munition pro Schuss (0–64), genommen aus Nebenhand, Schnellleiste und Inventar; `amount: 0` = kostenlos wie im Original. Unbekannte Namen fallen mit Warnung auf `NETHER_STAR` zurück |
 | `damage.enabled` / `damage.amount` | `true` / `100000` | Schaden beim Einschlag (Kugel mit dem Strike-Radius) |
 | `damage.attribute-to-shooter` | `false` | `true`: Der Schütze gilt als Angreifer, PvP-Schutz greift |
 | `destruction.enabled` | `true` | Blöcke entfernen |
@@ -225,6 +228,11 @@ nie eine fehlende Textur.
 - Die Abklingzeit übersteht Aus- und Einloggen und Neustarts. Vanilla speichert Item-Abklingzeiten
   nicht, im Original endet sie deshalb mit dem Ausloggen. Das Plugin merkt sich den Endzeitpunkt
   zusätzlich in den Spielerdaten (PDC) und prüft ihn beim Zielen und Feuern.
+- Jeder Schuss kostet standardmäßig einen Netherstern (`ammo`), im Original ist Feuern kostenlos. Wie
+  bei Pfeilen für den Bogen sucht das Plugin zuerst in der Nebenhand, dann in Schnellleiste und
+  Inventar; der Name des Items spielt keine Rolle, eine Railgun zählt nie als Munition. Abgezogen wird
+  erst, wenn der Strike tatsächlich startet. Wird er blockiert oder ist das Limit erreicht, bleibt die
+  Munition erhalten. Kreativ-Spieler und `/railgun strike` brauchen keine.
 - Gleichzeitig laufen standardmäßig höchstens 3 Strikes (`strike.max-concurrent`), im Original
   beliebig viele. Jeder Strike erfasst eine 500³-Box und zieht deren Entities an. Wer am Limit feuert,
   bekommt einen Hinweis; die Abklingzeit startet dann nicht.
@@ -255,7 +263,7 @@ lässt sie sich abschalten. Das Abbau-Tempo regeln `destruction.blocks-per-tick`
 - `tools/test_bot.py` ist ein minimaler Offline-Client für das 26.3-Protokoll (777). Er sendet
   genau die Pakete eines Vanilla-Clients: Use-Paket alle 4 Ticks beim Halten, Punch-Paket bzw.
   `START_DESTROY_BLOCK` beim Linksklick. Damit sind Zielen, Feuern, Loslassen, Abklingzeit (auch nach
-  Neu-Einloggen und Neustart), Strike-Limit, Schaden und Todesnachricht automatisiert geprüft.
+  Neu-Einloggen und Neustart), Strike-Limit, Munition, Schaden und Todesnachricht automatisiert geprüft.
   Vorausgesetzt ist `online-mode=false` und `network-compression-threshold=-1`.
 - `tools/convert_geckolib_model.py` erzeugt das Vanilla-Item-Modell aus dem GeckoLib-Modell der
   Mod. Die Umrechnung entspricht GeckoLibs Renderer: X gespiegelt, Rotationen um X und Y negiert,

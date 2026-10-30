@@ -1,5 +1,5 @@
 # Orbital Railgun – Konfiguration
-# Die Standardwerte entsprechen dem Original-Mod von Mishkis (Ausnahme: strike.max-concurrent).
+# Die Standardwerte entsprechen dem Original-Mod von Mishkis (Ausnahmen: strike.max-concurrent und ammo).
 # Zeiten sind in Ticks angegeben (20 Ticks = 1 Sekunde).
 
 # Sprache der Texte für Spieler ohne Resource-Pack (Dateien unter lang/ im Plugin-Jar),
@@ -23,6 +23,14 @@ strike:
   # Höchstens so viele Angriffe gleichzeitig auf dem ganzen Server (0 = unbegrenzt wie im Original).
   # Jeder Angriff erfasst eine 500³-Box und zieht deren Entities an; das begrenzt die Last.
   max-concurrent: 3
+
+# Munition: Jeder Schuss verbraucht dieses Item aus dem Inventar (zuerst Nebenhand, dann Schnellleiste und
+# Inventar). Abgezogen wird erst, wenn der Angriff wirklich startet. Spieler im Kreativmodus brauchen keine.
+ammo:
+  # Material-Name, z. B. NETHER_STAR, NETHERITE_INGOT, DIAMOND_BLOCK oder ECHO_SHARD.
+  item: NETHER_STAR
+  # Anzahl pro Schuss (0 = kostenlos wie im Original, höchstens 64).
+  amount: 1
 
 damage:
   enabled: true
