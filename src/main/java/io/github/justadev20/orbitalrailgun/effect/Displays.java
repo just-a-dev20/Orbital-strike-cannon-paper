@@ -50,8 +50,13 @@ public final class Displays {
         return new Transformation(corner, rotation, new Vector3f(size), new Quaternionf());
     }
 
+    /**
+     * Interpolates to the given transformation. Unchanged transformations are skipped: the delay is always sent,
+     * and the client then restarts the last interpolation, so a display updated every tick replays its last change
+     * every tick (a hidden marker would flash up at its old size).
+     */
     public static void update(Display display, Transformation transformation) {
-        if (display.isValid()) {
+        if (display.isValid() && !transformation.equals(display.getTransformation())) {
             display.setInterpolationDelay(0);
             display.setTransformation(transformation);
         }
