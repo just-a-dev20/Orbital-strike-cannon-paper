@@ -35,7 +35,7 @@ jobs:
 
       # Caches Gradle dependencies and validates the Gradle wrapper.
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v5
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Build plugin
         run: ./gradlew build
@@ -82,7 +82,7 @@ jobs:
           java-version: 25
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v5
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Build plugin
         run: ./gradlew build -PpluginVersion="$VERSION"
